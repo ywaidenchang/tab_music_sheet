@@ -1,0 +1,7 @@
+Flask
+pytube3
+opencv-python
+Pillow
+scikit-image
+reportlab
+tqdm

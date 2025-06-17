@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <title>베이스 TAB PDF 변환기</title>
+  <link rel="stylesheet" href="/static/css/bootstrap.min.css">
+  <style>
+    body { padding-top: 2rem; }
+    #canvas { border: 1px solid #dee2e6; cursor: crosshair; max-width: 100%; }
+  </style>
+</head>
+<body class="bg-light">
+  <div class="container">
+    <h1 class="mb-4 text-center">🎸 TAB PDF 변환기</h1>
+
+    <!-- 1. 입력 폼 -->
+    <div class="card mb-4">
+      <div class="card-body">
+        <form method="post" action="/submit" enctype="multipart/form-data">
+          <div class="mb-3">
+            <label class="form-label">YouTube URL</label>
+            <input type="url" name="yturl" class="form-control" placeholder="https://www.youtube.com/..." />
+          </div>
+          <div class="mb-3">
+            <label class="form-label">비디오 파일 업로드</label>
+            <input type="file" name="videofile" accept="video/*" class="form-control" />
+          </div>
+          <button type="submit" class="btn btn-primary w-100">다음 &gt;</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- 2. 썸네일 + ROI 선택 -->
+    {% if thumb %}
+    <div class="card mb-4">
+      <div class="card-body">
+        <h5 class="card-title">악보 영역 선택</h5>
+        <canvas id="canvas"></canvas>
+        <form id="roiForm" method="post" action="/process">
+          <input type="hidden" name="x" /><input type="hidden" name="y" />
+          <input type="hidden" name="w" /><input type="hidden" name="h" />
+          <input type="hidden" name="rows" value="6" />
+          <input type="hidden" name="cols" value="1" />
+          <input type="hidden" name="job_id" value="{{ job_id }}" />
+          <input type="hidden" name="video_path" value="{{ video_path }}" />
+          <button id="btnRoi" class="btn btn-success mt-3" disabled>PDF 생성 시작</button>
+        </form>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+  <script src="/static/js/bootstrap.bundle.min.js"></script>
+  {% if thumb %}
+  <script>
+    const img = new Image(), canvas = document.getElementById('canvas'), ctx = canvas.getContext('2d');
+    img.src = `/static/uploads/{{ thumb }}`;
+    let start=null, rect=null;
+    img.onload = () => {
+      canvas.width = img.width;
+      canvas.height = img.height;
+      ctx.drawImage(img, 0, 0);
+    };
+    canvas.onmousedown = e => { start = {x:e.offsetX,y:e.offsetY}; };
+    canvas.onmousemove = e => {
+      if (!start) return;
+      rect = {
+        x: Math.min(start.x, e.offsetX),
+        y: Math.min(start.y, e.offsetY),
+        w: Math.abs(start.x - e.offsetX),
+        h: Math.abs(start.y - e.offsetY)
+      };
+      ctx.drawImage(img, 0, 0);
+      if (rect.w && rect.h) {
+        ctx.strokeStyle = '#dc3545';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(rect.x, rect.y, rect.w, rect.h);
+      }
+    };
+    canvas.onmouseup = () => {
+      if (rect) {
+        ['x','y','w','h'].forEach(k => {
+          document.querySelector(`input[name=${k}]`).value = rect[k];
+        });
+        document.getElementById('btnRoi').disabled = false;
+      }
+      start = null;
+    };
+  </script>
+  {% endif %}
+</body>
+</html>

@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <title>PDF 생성 중...</title>
+  <link rel="stylesheet" href="/static/css/bootstrap.min.css">
+  <style>body{padding-top:4rem;}</style>
+</head>
+<body class="bg-light">
+  <div class="container text-center">
+    <h2>PDF를 생성 중입니다...</h2>
+    <div class="progress mt-4">
+      <div id="bar" class="progress-bar progress-bar-striped progress-bar-animated"
+           role="progressbar" style="width: 0%;"></div>
+    </div>
+  </div>
+  <script>
+    const source = new EventSource("/progress/{{ job_id }}");
+    source.onmessage = e => {
+      const d = JSON.parse(e.data);
+      if (d.total) {
+        const pct = Math.floor(d.current / d.total * 100);
+        document.getElementById("bar").style.width = pct + "%";
+      }
+      if (d.done) {
+        source.close();
+        window.location.href = `/download/${d.filename}`;
+      }
+    };
+  </script>
+</body>
+</html>
